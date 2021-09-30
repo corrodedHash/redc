@@ -1,0 +1,31 @@
+[package]
+name = "redc"
+version = "0.1.0"
+edition = "2018"
+description = "Unsigned integer types which are constrained within a modular field using montgomery multiplication, never overflowing or exceeding the modulo"
+keywords = ["arithmetic", "modular", "montgomery"]
+categories = ["mathematics", "algorithms", "cryptography"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/corrodedHash/redc-rs"
+
+[dependencies]
+twoword = "0.1.0"
+num-traits = "0.2.14"
+
+[dependencies.rug]
+version = "1.13.0"
+default-features = false
+features = ["integer"]
+
+[dev-dependencies]
+criterion = {version="0.3", features=["html_reports"]}
+
+[[bench]]
+name = "criterion"
+harness = false
+path = "benches/criterion/mod.rs"
+
+[profile.bench]
+lto = "fat"
+codegen-units = 1
+debug = 2
