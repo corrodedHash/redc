@@ -1,8 +1,11 @@
 pub mod element;
+mod uints;
 
 use element::{PrimIntElement, RugElement};
 use num_traits::{PrimInt, WrappingMul};
-use twoword::TwoWord;
+pub use uints::U128;
+pub use uints::U256;
+
 pub trait Field<T: Redc> {
     fn redc(&self, value: T::SourceType) -> T;
 }
@@ -140,12 +143,12 @@ impl Redc for u64 {
 fn p_calc_r_squared_u128(prime: u128) -> u128 {
     let r_mod = ((u128::MAX % prime) + 1) % prime;
     let r_squared =
-        (<u128 as Redc>::SourceType::mult(r_mod, r_mod)) % <u128 as Redc>::SourceType::from(prime);
-    r_squared.lower
+        (U128::from(r_mod).full_mul_u128(r_mod)) % <u128 as Redc>::SourceType::from(prime);
+    r_squared.low_u128()
 }
 
 impl Redc for u128 {
-    type SourceType = TwoWord<Self>;
+    type SourceType = U256;
     type FieldType = PrimIntField<Self>;
 
     fn setup_field(self) -> Self::FieldType {
@@ -158,7 +161,7 @@ impl Redc for u128 {
 
     fn to_montgomery_unchecked(self, field: &Self::FieldType) -> Self {
         debug_assert!(self <= field.prime);
-        field.redc(Self::SourceType::from(self) * Self::SourceType::from(field.r_squared))
+        field.redc(U128::from(self).full_mul_u128(field.r_squared))
     }
 
     fn to_montgomery(self, field: &Self::FieldType) -> Self {
@@ -166,10 +169,7 @@ impl Redc for u128 {
     }
 
     fn to_normal(self, field: &Self::FieldType) -> Self {
-        field.redc(Self::SourceType {
-            higher: 0,
-            lower: self,
-        })
+        field.redc(U256::from(self))
     }
 
     fn mod_pow(self, mut exponent: Self, field: &Self::FieldType) -> Self {
@@ -181,9 +181,9 @@ impl Redc for u128 {
         };
         exponent >>= 1;
         while exponent != 0 {
-            power = field.redc(Self::SourceType::mult(power, power));
+            power = field.redc(U128::from(power).full_mul_u128(power));
             if exponent % 2 == 1 {
-                result = field.redc(Self::SourceType::mult(result, power));
+                result = field.redc(U128::from(result).full_mul_u128(power));
             }
             exponent >>= 1;
         }
@@ -203,15 +203,13 @@ impl PrimIntField<u128> {
 
 impl Field<u128> for PrimIntField<u128> {
     fn redc(&self, value: <u128 as Redc>::SourceType) -> u128 {
-        use num_traits::ops::overflowing::OverflowingAdd;
+        let value_mod_r = value.low_u128();
+        let value_times_n_prime = U128::from(value_mod_r).full_mul_u128(self.prime_inverted);
+        let m = value_times_n_prime.low_u128();
 
-        let value_mod_r = value.lower;
-        let value_times_n_prime =
-            <u128 as Redc>::SourceType::mult(value_mod_r, self.prime_inverted);
-        let m = value_times_n_prime.lower;
-        let m_times_prime = <u128 as Redc>::SourceType::mult(m, self.prime);
-        let (tw, carry) = m_times_prime.overflowing_add(&value);
-        let mut tw_higher = tw.higher;
+        let m_times_prime = U128::from(m).full_mul_u128(self.prime);
+        let (tw, carry) = m_times_prime.overflowing_add(value);
+        let mut tw_higher = tw.high_u128();
         if carry {
             tw_higher += u128::MAX - self.prime + 1;
         } else if tw_higher >= self.prime {
@@ -329,13 +327,4 @@ pub struct PrimIntField<T> {
     prime: T,
     prime_inverted: T,
     r_squared: T,
-}
-
-#[cfg(test)]
-mod tests {
-   use super::p_calc_prime_inverse;
-#[test]
-fn test_prime_inverse() {
-    assert_eq!(p_calc_prime_inverse(23u64), 3_208_129_404_123_400_281);
-}
 }

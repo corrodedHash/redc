@@ -131,15 +131,9 @@ impl<'a> std::ops::Mul for PrimIntElement<'a, u128> {
     type Output = Self;
 
     fn mul(mut self, rhs: Self) -> Self::Output {
-        self.element = self.field.redc(
-            twoword::TwoWord::<u128> {
-                lower: self.element,
-                higher: 0,
-            } * twoword::TwoWord::<u128> {
-                lower: rhs.element,
-                higher: 0,
-            },
-        );
+        self.element = self
+            .field
+            .redc(crate::U256::from(self.element) * crate::U256::from(rhs.element));
         self
     }
 }

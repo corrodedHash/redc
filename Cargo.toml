@@ -9,8 +9,8 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/corrodedHash/redc-rs"
 
 [dependencies]
-twoword = "0.1.0"
 num-traits = "0.2.14"
+uint = "0.9.1"
 
 [dependencies.rug]
 version = "1.13.0"
@@ -18,7 +18,7 @@ default-features = false
 features = ["integer"]
 
 [dev-dependencies]
-criterion = {version="0.3", features=["html_reports"]}
+criterion = { version="0.3", features=[ "html_reports" ] }
 
 [[bench]]
 name = "criterion"

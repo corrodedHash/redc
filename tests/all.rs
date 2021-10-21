@@ -1,8 +1,7 @@
-use twoword::TwoWord;
-
 use redc::Field;
 
 use redc::Redc;
+use redc::U128;
 
 #[test]
 fn test_redc() {
@@ -52,7 +51,7 @@ fn test_redc_u128() {
     let b_original = 17u128;
     let a = a_original.to_montgomery(&field);
     let b = b_original.to_montgomery(&field);
-    let r = field.redc(TwoWord::<u128>::mult(a, b));
+    let r = field.redc(U128::from(a).full_mul_u128(b));
     assert_eq!(r.to_normal(&field), 4);
 }
 
@@ -66,7 +65,7 @@ fn test_redc_overflow_u128() {
     assert_eq!(a, a_original);
     let b = b_original.to_montgomery(&field);
     assert_eq!(b, b_original);
-    let r = field.redc(TwoWord::mult(a, b));
+    let r = field.redc(U128::from(a).full_mul_u128(b));
     assert_eq!(r, 4756);
     assert_eq!(r.to_normal(&field), 4756);
 }
@@ -81,7 +80,7 @@ fn test_redc_overflow_better_u128() {
     assert_eq!(a, 340_282_366_920_938_463_463_374_607_431_768_210_985);
     let b = b_original.to_montgomery(&field);
     assert_eq!(b, 340_282_366_920_938_463_463_374_607_431_768_210_943);
-    let r = field.redc(TwoWord::mult(a, b));
+    let r = field.redc(U128::from(a).full_mul_u128(b));
     assert_eq!(r, 79560);
     assert_eq!(r.to_normal(&field), 26520);
 }
